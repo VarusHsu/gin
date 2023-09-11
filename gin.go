@@ -45,12 +45,15 @@ var regSafePrefix = regexp.MustCompile("[^a-zA-Z0-9/-]+")
 var regRemoveRepeatedChar = regexp.MustCompile("/{2,}")
 
 // HandlerFunc defines the handler used by gin middleware as return value.
+// HandlerFunc 定义用作gin中间件的返回值的的处理函数
 type HandlerFunc func(*Context)
 
 // HandlersChain defines a HandlerFunc slice.
+// HandlersChain 定义了一个 HandlerFunc 切片
 type HandlersChain []HandlerFunc
 
 // Last returns the last handler in the chain. i.e. the last handler is the main one.
+// Last 返回HandlersChain中的最后一个处理函数。换句话说，最后一个处理函数是主要的一个
 func (c HandlersChain) Last() HandlerFunc {
 	if length := len(c); length > 0 {
 		return c[length-1]
@@ -59,6 +62,7 @@ func (c HandlersChain) Last() HandlerFunc {
 }
 
 // RouteInfo represents a request route's specification which contains method and path and its handler.
+// RouteInfo 表示请求路由的规范，其中包含方法和路径及其处理函数
 type RouteInfo struct {
 	Method      string
 	Path        string
@@ -67,20 +71,25 @@ type RouteInfo struct {
 }
 
 // RoutesInfo defines a RouteInfo slice.
+// RoutesInfo 定义了一个 RouteInfo 切片
 type RoutesInfo []RouteInfo
 
 // Trusted platforms
+// 受信任的平台
 const (
 	// PlatformGoogleAppEngine when running on Google App Engine. Trust X-Appengine-Remote-Addr
 	// for determining the client's IP
+	// PlatformGoogleAppEngine 当在Google App Engine上运行时。信任X-Appengine-Remote-Addr以确定客户端的IP
 	PlatformGoogleAppEngine = "X-Appengine-Remote-Addr"
 	// PlatformCloudflare when using Cloudflare's CDN. Trust CF-Connecting-IP for determining
 	// the client's IP
+	// PlatformCloudflare 当使用Cloudflare的CDN时。信任CF-Connecting-IP以确定客户端的IP
 	PlatformCloudflare = "CF-Connecting-IP"
 )
 
 // Engine is the framework's instance, it contains the muxer, middleware and configuration settings.
 // Create an instance of Engine, by using New() or Default()
+// Engine 是框架的实例，它包含 muxer、中间件和配置设置。通过使用 New() 或 Default() 创建 Engine 的实例
 type Engine struct {
 	RouterGroup
 
@@ -89,6 +98,9 @@ type Engine struct {
 	// For example if /foo/ is requested but a route only exists for /foo, the
 	// client is redirected to /foo with http status code 301 for GET requests
 	// and 307 for all other request methods.
+	// RedirectTrailingSlash 启用自动重定向，如果当前路由无法匹配，但是存在带（不带）尾部斜杠的路径的处理函数。
+	// 例如，如果请求 /foo/，但是只有 /foo 的路由存在，则客户端将被重定向到 /foo，
+	// GET 请求的 http 状态码为 301，所有其他请求方法的状态码为 307。
 	RedirectTrailingSlash bool
 
 	// RedirectFixedPath if enabled, the router tries to fix the current request path, if no
@@ -100,6 +112,12 @@ type Engine struct {
 	// all other request methods.
 	// For example /FOO and /..//Foo could be redirected to /foo.
 	// RedirectTrailingSlash is independent of this option.
+	// RedirectFixedPath 如果启用，路由器将尝试修复当前请求路径，如果没有为其注册处理函数。
+	// 首先删除多余的路径元素，例如 ../ 或 //。
+	// 然后，路由器对清理后的路径进行不区分大小写的查找。
+	// 如果可以为此路由找到处理函数，则路由器将使用状态码 301（GET 请求）或 307（所有其他请求方法）对修正后的路径进行重定向。
+	// 例如，/FOO 和 /..//Foo 可以重定向到 /foo。
+	// RedirectTrailingSlash 与此选项无关。
 	RedirectFixedPath bool
 
 	// HandleMethodNotAllowed if enabled, the router checks if another method is allowed for the
@@ -108,26 +126,38 @@ type Engine struct {
 	// and HTTP status code 405.
 	// If no other Method is allowed, the request is delegated to the NotFound
 	// handler.
+	// HandleMethodNotAllowed 如果启用，路由器将检查是否允许为当前路由使用另一种方法，如果无法路由当前请求。
+	// 如果是这种情况，则使用“方法不允许”和 HTTP 状态码 405 来回答请求。
+	// 如果不允许其他方法，则将请求委托给 NotFound 处理函数。
 	HandleMethodNotAllowed bool
 
 	// ForwardedByClientIP if enabled, client IP will be parsed from the request's headers that
 	// match those stored at `(*gin.Engine).RemoteIPHeaders`. If no IP was
 	// fetched, it falls back to the IP obtained from
 	// `(*gin.Context).Request.RemoteAddr`.
+	// ForwardedByClientIP 如果启用，客户端 IP 将从与存储在 `(*gin.Engine).RemoteIPHeaders` 中匹配的请求头中解析。
+	// 如果没有获取到 IP，则回退到从 `(*gin.Context).Request.RemoteAddr` 获取的 IP。
 	ForwardedByClientIP bool
 
 	// AppEngine was deprecated.
 	// Deprecated: USE `TrustedPlatform` WITH VALUE `gin.PlatformGoogleAppEngine` INSTEAD
 	// #726 #755 If enabled, it will trust some headers starting with
 	// 'X-AppEngine...' for better integration with that PaaS.
+	// AppEngine 已弃用。
+	// Deprecated: 请使用值为 `gin.PlatformGoogleAppEngine` 的 `TrustedPlatform` 代替
+	// #726 #755 如果启用，它将信任以“X-AppEngine...”开头的某些请求头，以便更好地与该 PaaS 集成。
 	AppEngine bool
 
 	// UseRawPath if enabled, the url.RawPath will be used to find parameters.
+	// UseRawPath 如果启用，将使用 url.RawPath 来查找参数。
 	UseRawPath bool
 
 	// UnescapePathValues if true, the path value will be unescaped.
 	// If UseRawPath is false (by default), the UnescapePathValues effectively is true,
 	// as url.Path gonna be used, which is already unescaped.
+	// UnescapePathValues 如果为 true，则路径值将被解码。
+	// 如果 UseRawPath 为 false（默认），则 UnescapePathValues 实际上为 true，
+	// 因为将使用 url.Path，该值已经被解码。
 	UnescapePathValues bool
 
 	// RemoveExtraSlash a parameter can be parsed from the URL even with extra slashes.
@@ -146,6 +176,7 @@ type Engine struct {
 
 	// MaxMultipartMemory value of 'maxMemory' param that is given to http.Request's ParseMultipartForm
 	// method call.
+	// MaxMultipartMemory 是传递给 http.Request 的 ParseMultipartForm 方法调用的 'maxMemory' 参数的值。
 	MaxMultipartMemory int64
 
 	// UseH2C enable h2c support.
@@ -304,6 +335,8 @@ func (engine *Engine) NoMethod(handlers ...HandlerFunc) {
 // Use attaches a global middleware to the router. i.e. the middleware attached through Use() will be
 // included in the handlers chain for every single request. Even 404, 405, static files...
 // For example, this is the right place for a logger or error management middleware.
+// Use 将全局中间件附加到路由器。即通过 Use() 附加的中间件将包含在每个请求的处理函数链中。
+// 即使是 404、405、静态文件等等... 例如，这是记录器或错误管理中间件的正确位置。
 func (engine *Engine) Use(middleware ...HandlerFunc) IRoutes {
 	engine.RouterGroup.Use(middleware...)
 	engine.rebuild404Handlers()

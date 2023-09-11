@@ -62,6 +62,7 @@ type RouterGroup struct {
 var _ IRouter = (*RouterGroup)(nil)
 
 // Use adds middleware to the group, see example code in GitHub.
+// Use 增加中间件到组中，参考 GitHub 上的示例代码。
 func (group *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
 	group.Handlers = append(group.Handlers, middleware...)
 	return group.returnObj()
